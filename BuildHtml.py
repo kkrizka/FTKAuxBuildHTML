@@ -5,6 +5,7 @@ import sys
 import os
 import datetime
 import glob
+import sqlite3
 
 from Compile import *
 from Templates import *
@@ -24,10 +25,58 @@ compileDirs = ['/home/kkrizka/tmp/fw'] #[ '/net/designs/FTK/Nightlies/' ]
 compiles  = [ Compile(result)  for compileDir in compileDirs for result in glob.glob('%s/compile_*2016[0-9]*.tar.bz2'%(compileDir)) ]
 runtimers = [ RunTimer(result) for compileDir in compileDirs for result in glob.glob('%s/compileStartTime_*.null'%(compileDir)) ]
 
-for c in compiles: c.process()
+#
+# Load information from sqlite table
+#
+db=sqlite3.connect('compiles.db')
+cursor=db.cursor()
+
+cursor.execute('CREATE TABLE IF NOT EXISTS projects  (id                INTEGER PRIMARY KEY,name TEXT KEY)')
+cursor.execute('CREATE TABLE IF NOT EXISTS compiles  (id                INTEGER PRIMARY KEY, \
+                                                      project_id        INTEGER, \
+                                                      datetime          DATETIME, \
+                                                      firmware_version  TEXT, \
+                                                      auxcommon_version TEXT, \
+                                                      firmware_log      TEXT, \
+                                                      auxcommon_log     TEXT, \
+                                                      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE )')
+cursor.execute('CREATE TABLE IF NOT EXISTS revisions (id                   INTEGER PRIMARY KEY, \
+                                                      compile_id           INTEGER, \
+                                                      rev_path             TEXT, \
+                                                      compile_time         INTEGER, \
+                                                      version              TEXT, \
+                                                      n_info               INTEGER, \
+                                                      n_warnings           INTEGER, \
+                                                      n_errors             INTEGER, \
+                                                      n_other              INTEGER, \
+                                                      ru_logicutil         INTEGER, \
+                                                      ru_logicutil_total   INTEGER, \
+                                                      ru_dspblocks         INTEGER, \
+                                                      ru_dspblocks_total   INTEGER, \
+                                                      ru_perphclocks       INTEGER, \
+                                                      ru_perphclocks_total INTEGER, \
+                                                      FOREIGN KEY(compile_id) REFERENCES compiles(id) ON DELETE CASCADE )')
+cursor.execute('CREATE TABLE IF NOT EXISTS clocks    (id          INTEGER PRIMARY KEY, \
+                                                      revision_id INTEGER, \
+                                                      clock       TEXT, \
+                                                      fmax_target REAL, \
+                                                      fmax        REAL, \
+                                                      FOREIGN KEY(revision_id) REFERENCES revision(id) ON DELETE CASCADE )')
+cursor.execute('CREATE TABLE IF NOT EXISTS processinfo (id          INTEGER PRIMARY KEY, \
+                                                        revision_id INTEGER, \
+                                                        process     TEXT, \
+                                                        time        INTEGER, \
+                                                        n_info      INTEGER, \
+                                                        n_warnings  INTEGER, \
+                                                        n_errors    INTEGER, \
+                                                        n_other     INTEGER, \
+                                                        FOREIGN KEY(revision_id) REFERENCES revisoins(id) ON DELETE CASCADE )')
+db.commit()
+
+for c in compiles: c.process(db)
 
 #
-# split up the compiles based on project name and sort by date
+# Split up the compiles based on project name and sort by date
 #
 
 projects = list( set( [ x.project_name for x in compiles ] ) )
@@ -39,7 +88,6 @@ for p in projects:
     compile_dict[p]  = [ x for x in compiles  if x.project_name == p ]
     runtimer_dict[p] = [ x for x in runtimers if x.project_name == p ]
     compile_dict[p].sort( key=lambda x: x.compile_name, reverse=True )
-
 
 #
 # Open the output file
@@ -89,7 +137,7 @@ for p in projects:
                       '<tr>' ,
                       '<th>Date</th>' ,
                       '<th>Duration</th>' ,
-                      '<th>Processor</th>' ,
+                      '<th>Firmware</th>' ,
                       '<th>AUXCommon</th>' ,
                       '<th>Version</th>' ,
                       '<th>nInfo</th>' ,
@@ -111,14 +159,14 @@ for p in projects:
 
         print("processing:",c.compile_name,"...")
 
-	if not len(c.revisions):
+        if not len(c.revisions):
 
           writeLines( f , [ '<tr>' ,
                             '<td>'+str(c.date)+'</td>', '<td> <font color="red">FAILED</font> </td>' ,
                             '<td></td>', '<td></td>', '<td></td>', '<td></td>', '<td></td>',
                             '<td></td>', '<td></td>', '<td></td>', '<td></td>', '</tr>' ] )
 
-	else:
+        else:
 
           #list_dates += [ dates.date2num( c.compile_start_time ) ]
           list_fmax0 += [ c.revisions[0].numeric_fMax('outclk_wire[0]') ]
@@ -127,7 +175,7 @@ for p in projects:
           writeLines( f , [ '<tr data-toggle="collapse" data-target="#'+c.compile_name+'" class="accordion-toggle">' ,
                             '<td>'+str(c.date)+'</td>' ,
                             '<td>'+str(c.revisions[0].compile_time)+'</td>' ,
-                            '<td>'+c.processor_version+'</td>' ,
+                            '<td>'+c.firmware_version +'</td>' ,
                             '<td>'+c.auxcommon_version+'</td>' ,
                             '<td>'+c.revisions[0].version+'</td>' ,
                             '<td>'+str(c.revisions[0].n_info)+'</td>' ,
@@ -145,7 +193,7 @@ for p in projects:
                             '<br>' ,
                             '<div class="row">' ,
                             '<div class="col-md-6">' ,
-                            c.processorLogString() ,
+                            c.firmwareLogString() ,
                             '</div>' ,
                             '<div class="col-md-6">' ,
                             c.auxcommonLogString() ,
@@ -175,6 +223,7 @@ for p in projects:
 writeLines( f , PageTrailer )
 f.close()
 
+db.close()
 #os.system( 'scp -r nightlies.html jsaxon@hep.uchicago.edu:/local/web/hep/atlas/ftk/nightlies/')
 
 print("done.")

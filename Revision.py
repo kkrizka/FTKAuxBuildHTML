@@ -67,7 +67,13 @@ class Revision:
         self.fmax_fit = { 'outclk_wire[0]' : '-' , 'outclk_wire[1]' : '-' , 'outclk_wire[2]' : '-' }
         self.fmax_gen = { 'outclk_wire[0]' : '-' , 'outclk_wire[1]' : '-' , 'outclk_wire[2]' : '-' }
 
-        self.resourceusage=None
+        #self.resourceusage=None
+        self.ru_logicutil=0
+        self.ru_logicutil_total=0
+        self.ru_dspblocks=0
+        self.ru_dspblocks_total=0
+        self.ru_perphclocks=0
+        self.ru_perphclocks_total=0
         
         self.extra_info = []
         
@@ -171,5 +177,19 @@ class Revision:
         except KeyError:
             pass
         else:
-            self.resourceusage=Table()
-            self.resourceusage.process(f)
+            resourceusage=Table()
+            resourceusage.process(f)
+
+            logicutil=resourceusage.rows[0][1].replace(',','').split('/')
+            self.ru_logicutil=int(logicutil[0])
+            self.ru_logicutil_total=int(logicutil[1])
+
+            dspblocks=resourceusage.rows[46][1].replace(',','').split('/')
+            self.ru_dspblocks=int(dspblocks[0])
+            self.ru_dspblocks_total=int(dspblocks[1])
+
+            perphclocks=resourceusage.rows[51][1].replace(',','').split('/')
+            self.ru_perphclocks=int(perphclocks[0])
+            self.ru_perphclocks_total=int(perphclocks[1])
+
+            

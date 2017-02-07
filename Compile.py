@@ -1,11 +1,13 @@
 import os, os.path
 import sys
+import time
 import datetime
 import tarfile
 
 from Templates import *
 from Revision import *
 
+import htmltools
 
 class Compile:
 
@@ -30,15 +32,12 @@ class Compile:
                                        int(self.compile_name[-4:-2]) ,
                                        int(self.compile_name[-2:]) )
 
-        self.processor_version = "N/A"
+        self.firmware_version  = "N/A"
         self.auxcommon_version = "N/A"
 
-        self.diff = "N/A"
         self.extra_info = []
-        self.fitter_effort = "-"
-        self.top_failing_paths_link = ""
         
-        self.processor_log = []
+        self.firmware_log  = []
         self.auxcommon_log = []
 
     def formatParagraph( self , li ):
@@ -55,13 +54,102 @@ class Compile:
     def extraInfoString( self ):
         return self.formatParagraph( self.extra_info )
 
-    def processorLogString( self ):
-        return self.formatParagraph( self.processor_log )
+    def firmwareLogString( self ):
+        return self.formatParagraph( self.firmware_log )
 
     def auxcommonLogString( self ):
         return self.formatParagraph( self.auxcommon_log )
+
+    def process(self, db):
+        """ process info from a database if an entry exists, otherwise from a file """
+        cursor=db.cursor()
+
+        # Check if project exists
+        cursor.execute('SELECT * FROM projects WHERE name="%s"'%self.project_name)
+        result=cursor.fetchone()
+        print(result)
+        project_id=None
+        if result==None: # Create
+            cursor.execute('INSERT INTO projects (name) VALUES ("%s")'%self.project_name)
+            db.commit()
+            project_id=cursor.lastrowid
+        else:
+            project_id=result[0]
+
+        # Check if compile exists
+        cursor.execute('SELECT * FROM compiles WHERE project_id=%d'%project_id)
+        result=cursor.fetchone()
+        print(result)
+        compile_id=None
+        if result==None:
+            self.process_file()
+            print(self.extra_info)
+
+            cursor.execute('INSERT INTO compiles (project_id,datetime,firmware_version,auxcommon_version,firmware_log,auxcommon_log) VALUES (%d,%d,"%s","%s",?,?)'%(project_id,time.mktime(self.date.timetuple()),self.firmware_version,self.auxcommon_version),('\n'.join(self.firmware_log),'\n'.join(self.auxcommon_log)))
+            db.commit()
+            compile_id=cursor.lastrowid
+
+            for revision in self.revisions:
+                cursor.execute('INSERT INTO revisions (compile_id,rev_path,compile_time,version,n_info,n_warnings,n_errors,n_other,ru_logicutil,ru_logicutil_total,ru_dspblocks,ru_dspblocks_total,ru_perphclocks,ru_perphclocks_total) VALUES (%d,"%s",%d,"%s",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)'%(compile_id,revision.revpath,revision.compile_time.total_seconds(),revision.version,revision.n_info,revision.n_warnings,revision.n_errors,revision.n_other,revision.ru_logicutil,revision.ru_logicutil_total,revision.ru_dspblocks,revision.ru_dspblocks_total,revision.ru_perphclocks,revision.ru_perphclocks_total))
+                db.commit()
+                revision_id=cursor.lastrowid
+
+                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"analysis",revision.analysis.time.total_seconds(),revision.analysis.n_info,revision.analysis.n_warnings,revision.analysis.n_errors,revision.analysis.n_other))
+                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"fitter",revision.fitter.time.total_seconds(),revision.fitter.n_info,revision.fitter.n_warnings,revision.fitter.n_errors,revision.fitter.n_other))
+                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"assembler",revision.assembler.time.total_seconds(),revision.assembler.n_info,revision.assembler.n_warnings,revision.assembler.n_errors,revision.assembler.n_other))
+                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"timing",revision.timing.time.total_seconds(),revision.timing.n_info,revision.timing.n_warnings,revision.timing.n_errors,revision.timing.n_other))
+
+                for clock in revision.fmax_fit:
+                    cursor.execute('INSERT INTO clocks (revision_id,clock,fmax_target,fmax) VALUES (%d,"%s",%f,%f)'%(revision_id,clock,revision.fmax_gen[clock],revision.fmax_fit[clock]))
+
+                db.commit()
+        else:
+            compile_id=result[0]
+
+            self.firmware_version =result[3]
+            self.auxcommon_version=result[4]
+
+            self.firmware_log =result[5].split('\n')
+            self.auxcommon_log=result[6].split('\n')
+
+            result=cursor.execute('SELECT * FROM revisions WHERE compile_id=%d'%compile_id)
+            for row in result:
+                print('revision',row)
+                rev=Revision(row[2])
+                rev.compile_time=datetime.timedelta(seconds=row[3])
+                rev.version=row[4]
+                rev.n_info=row[5]
+                rev.n_warnings=row[6]
+                rev.n_errors=row[7]
+                rev.n_other=row[8]
+
+                rev.ru_logicutil=row[9]
+                rev.ru_logicutil_total=row[10]
+                rev.ru_dspblocks=row[11]
+                rev.ru_dspblocks_total=row[12]
+                rev.ru_perphclocks=row[13]
+                rev.ru_perphclocks_total=row[14]
+
+                result=cursor.execute('SELECT * FROM clocks WHERE revision_id=%d'%row[0])
+                for row in result:
+                    rev.fmax_gen[row[2]]=row[3]
+                    rev.fmax_fit[row[2]]=row[4]
+
+                result=cursor.execute('SELECT * FROM processinfo WHERE revision_id=%d'%row[0])
+                for row in result:
+                    process=row[2]
+                    rev.__getattr__(process).time=datetime.timedelta(seconds=row[3])
+                    rev.__getattr__(process).n_info=row[4]
+                    rev.__getattr__(process).n_warnings=row[5]
+                    rev.__getattr__(process).n_errors=row[6]
+                    rev.__getattr__(process).n_other=row[7]
+                    
+                self.revisions.append(rev)
+
+        self.build_extra_info()
+                
     
-    def process( self ):
+    def process_file( self ):
         """ grab info from compile logs """
 
         fh=tarfile.open(self.compile_path,'r')
@@ -72,22 +160,22 @@ class Compile:
             self.revisions[-1].process(fh)
 
         # Common information
-        self.processor_log += [ '<h4 class="text-left">Processor Git Logs</h4>' ]
-	try: f = fh.extractfile( self.compile_name+'/processor.log' )
+        self.firmware_log += [ '<h4 class="text-left">Firmware Git Logs</h4>' ]
+        try: f = fh.extractfile( self.compile_name+'/processor.log' )
         except(KeyError): f = []
 
         for line in f:
             line=line.decode().strip()
             if line.startswith('commit '):
-                self.processor_log += [ '<hr>'+line ]
+                self.firmware_log += [ '<hr>'+line ]
             else:
-                self.processor_log += [ line ]
-            if self.processor_version=='N/A':
-                self.processor_version=line.split()[1][:7]
+                self.firmware_log += [ line ]
+            if self.firmware_version=='N/A':
+                self.firmware_version=line.split()[1][:7]
 
         self.auxcommon_log += [ '<h4 class="text-left">AUXCommon Git Logs</h4>' ]
-	try: f = fh.extractfile( self.compile_name+'/auxcommon.log' )
-	except(KeyError): f = []
+        try: f = fh.extractfile( self.compile_name+'/auxcommon.log' )
+        except(KeyError): f = []
 
         for line in f:
             line=line.decode().strip()
@@ -98,15 +186,8 @@ class Compile:
             if self.auxcommon_version=='N/A':
                 self.auxcommon_version=line.split()[1][:7]
 
-        # Extra info
-        self.extra_info += [ "Get files:" ]
-        self.extra_info += [ " scp eshop1.uchicago.edu:/net/designs/FTK/Nightlies/"+self.compile_name+".tar.bz2 ." ]
-        self.extra_info += [ "" ]
-
-        # if self.n_errors > 0 or not os.path.exists( os.path.join(self.compile_path,'Rx.fit.rpt') ):
-
         # Dump some of the error messages
-	if len(self.revisions):
+        if len(self.revisions):
 
           if self.revisions[0].analysis.n_errors>0:
               self.extra_info += [ '<h4 class="text-left">Analysis Errors</h4>' ]
@@ -125,10 +206,24 @@ class Compile:
               for errorline in self.revisions[0].timing.errors:
                   self.extra_info += [ errorline+'\n' ]
               
-          # Table of resource usage
-          if self.revisions[0].resourceusage!=None:
-              self.extra_info += [ self.revisions[0].resourceusage.html_rows([0,46,51]) ]
 
         else:
+            self.extra_info += [ '<h4 class="text-left">Warning: no revisions found.</h4>' ]
 
-	  self.extra_info += [ '<h4 class="text-left">Warning: no revisions found.</h4>' ]
+    def build_extra_info(self):
+        """ Build the extra_info (HTML) structure from properties """
+
+        # Extra info
+        self.extra_info += [ "Get files:" ]
+        self.extra_info += [ " scp eshop1.uchicago.edu:/net/designs/FTK/Nightlies/"+self.compile_name+".tar.bz2 ." ]
+        self.extra_info += [ "" ]
+        
+        if len(self.revisions):        
+            # Table of resource usage
+            self.extra_info += [ htmltools.maketable('Fitter Resource Usage Summary',None,[['Logic utilization (ALMs needed / total ALMs on device)','%d / %d'%(self.revisions[0].ru_logicutil,self.revisions[0].ru_logicutil_total),'%0.0f%%'%(self.revisions[0].ru_logicutil/self.revisions[0].ru_logicutil_total*100)],
+                                                                                           ['Total DSP Blocks','%d / %d'%(self.revisions[0].ru_dspblocks,self.revisions[0].ru_dspblocks_total),'%0.0f%%'%(self.revisions[0].ru_dspblocks/self.revisions[0].ru_dspblocks_total*100)],
+                                                                                           ['Horizontal periphery clocks and Vertical periphery clocks','%d / %d'%(self.revisions[0].ru_perphclocks,self.revisions[0].ru_perphclocks_total),'%0.0f%%'%(self.revisions[0].ru_perphclocks/self.revisions[0].ru_perphclocks_total*100)]]) ]
+        else:
+            self.extra_info += [ '<h4 class="text-left">Warning: no revisions found.</h4>' ]
+
+            
