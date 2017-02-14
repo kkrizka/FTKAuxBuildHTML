@@ -9,6 +9,8 @@ from Revision import *
 
 import htmltools
 
+import heplovespy26
+
 class Compile:
 
     """Class extracts and stores info for a single compile"""
@@ -90,20 +92,20 @@ class Compile:
             compile_id=cursor.lastrowid
 
             for revision in self.revisions:
-                cursor.execute('INSERT INTO revisions (compile_id,rev_path,compile_time,version,n_info,n_warnings,n_errors,n_other,ru_logicutil,ru_logicutil_total,ru_dspblocks,ru_dspblocks_total,ru_perphclocks,ru_perphclocks_total) VALUES (%d,"%s",%d,"%s",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)'%(compile_id,revision.revpath,revision.compile_time.total_seconds(),revision.version,revision.n_info,revision.n_warnings,revision.n_errors,revision.n_other,revision.ru_logicutil,revision.ru_logicutil_total,revision.ru_dspblocks,revision.ru_dspblocks_total,revision.ru_perphclocks,revision.ru_perphclocks_total))
+                cursor.execute('INSERT INTO revisions (compile_id,rev_path,compile_time,version,n_info,n_warnings,n_errors,n_other,ru_logicutil,ru_logicutil_total,ru_dspblocks,ru_dspblocks_total,ru_perphclocks,ru_perphclocks_total) VALUES (%d,"%s",%d,"%s",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)'%(compile_id,revision.revpath,heplovespy26.total_seconds(revision.compile_time),revision.version,revision.n_info,revision.n_warnings,revision.n_errors,revision.n_other,revision.ru_logicutil,revision.ru_logicutil_total,revision.ru_dspblocks,revision.ru_dspblocks_total,revision.ru_perphclocks,revision.ru_perphclocks_total))
                 db.commit()
                 revision_id=cursor.lastrowid
 
                 if revision.assignments.exists:
-                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assignments" ,revision.assignments.time.total_seconds(),revision.assignments.n_info,revision.assignments.n_warnings,revision.assignments.n_errors,revision.assignments.n_other),('\n'.join(revision.assignments.errors),))
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assignments" ,heplovespy26.total_seconds(revision.assignments.time),revision.assignments.n_info,revision.assignments.n_warnings,revision.assignments.n_errors,revision.assignments.n_other),('\n'.join(revision.assignments.errors),))
                 if revision.analysis.exists:
-                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"analysis" ,revision.analysis.time.total_seconds(),revision.analysis.n_info,revision.analysis.n_warnings,revision.analysis.n_errors,revision.analysis.n_other),('\n'.join(revision.analysis.errors),))
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"analysis"   ,heplovespy26.total_seconds(revision.analysis.time),revision.analysis.n_info,revision.analysis.n_warnings,revision.analysis.n_errors,revision.analysis.n_other),('\n'.join(revision.analysis.errors),))
                 if revision.fitter.exists:
-                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"fitter"   ,revision.fitter.time.total_seconds(),revision.fitter.n_info,revision.fitter.n_warnings,revision.fitter.n_errors,revision.fitter.n_other),('\n'.join(revision.fitter.errors),))
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"fitter"     ,heplovespy26.total_seconds(revision.fitter.time),revision.fitter.n_info,revision.fitter.n_warnings,revision.fitter.n_errors,revision.fitter.n_other),('\n'.join(revision.fitter.errors),))
                 if revision.assembler.exists:
-                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assembler",revision.assembler.time.total_seconds(),revision.assembler.n_info,revision.assembler.n_warnings,revision.assembler.n_errors,revision.assembler.n_other),('\n'.join(revision.assembler.errors),))
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assembler"  ,heplovespy26.total_seconds(revision.assembler.time),revision.assembler.n_info,revision.assembler.n_warnings,revision.assembler.n_errors,revision.assembler.n_other),('\n'.join(revision.assembler.errors),))
                 if revision.timing.exists:
-                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"timing"   ,revision.timing.time.total_seconds(),revision.timing.n_info,revision.timing.n_warnings,revision.timing.n_errors,revision.timing.n_other),('\n'.join(revision.timing.errors),))
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"timing"     ,heplovespy26.total_seconds(revision.timing.time),revision.timing.n_info,revision.timing.n_warnings,revision.timing.n_errors,revision.timing.n_other),('\n'.join(revision.timing.errors),))
 
                 for clock in revision.fmax_fit:
                     cursor.execute('INSERT INTO clocks (revision_id,clock,fmax_target,fmax) VALUES (%d,"%s",%f,%f)'%(revision_id,clock,revision.fmax_gen[clock],revision.fmax_fit[clock]))
