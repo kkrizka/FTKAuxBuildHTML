@@ -70,6 +70,7 @@ cursor.execute('CREATE TABLE IF NOT EXISTS processinfo (id          INTEGER PRIM
                                                         n_warnings  INTEGER, \
                                                         n_errors    INTEGER, \
                                                         n_other     INTEGER, \
+                                                        errors      TEXT, \
                                                         FOREIGN KEY(revision_id) REFERENCES revisoins(id) ON DELETE CASCADE )')
 db.commit()
 

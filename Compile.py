@@ -94,10 +94,16 @@ class Compile:
                 db.commit()
                 revision_id=cursor.lastrowid
 
-                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"analysis",revision.analysis.time.total_seconds(),revision.analysis.n_info,revision.analysis.n_warnings,revision.analysis.n_errors,revision.analysis.n_other))
-                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"fitter",revision.fitter.time.total_seconds(),revision.fitter.n_info,revision.fitter.n_warnings,revision.fitter.n_errors,revision.fitter.n_other))
-                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"assembler",revision.assembler.time.total_seconds(),revision.assembler.n_info,revision.assembler.n_warnings,revision.assembler.n_errors,revision.assembler.n_other))
-                cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other) VALUES (%d,"%s",%d,%d,%d,%d,%d)'%(revision_id,"timing",revision.timing.time.total_seconds(),revision.timing.n_info,revision.timing.n_warnings,revision.timing.n_errors,revision.timing.n_other))
+                if revision.assignments.exists:
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assignments" ,revision.assignments.time.total_seconds(),revision.assignments.n_info,revision.assignments.n_warnings,revision.assignments.n_errors,revision.assignments.n_other),('\n'.join(revision.assignments.errors),))
+                if revision.analysis.exists:
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"analysis" ,revision.analysis.time.total_seconds(),revision.analysis.n_info,revision.analysis.n_warnings,revision.analysis.n_errors,revision.analysis.n_other),('\n'.join(revision.analysis.errors),))
+                if revision.fitter.exists:
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"fitter"   ,revision.fitter.time.total_seconds(),revision.fitter.n_info,revision.fitter.n_warnings,revision.fitter.n_errors,revision.fitter.n_other),('\n'.join(revision.fitter.errors),))
+                if revision.assembler.exists:
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"assembler",revision.assembler.time.total_seconds(),revision.assembler.n_info,revision.assembler.n_warnings,revision.assembler.n_errors,revision.assembler.n_other),('\n'.join(revision.assembler.errors),))
+                if revision.timing.exists:
+                    cursor.execute('INSERT INTO processinfo (revision_id,process,time,n_info,n_warnings,n_errors,n_other,errors) VALUES (%d,"%s",%d,%d,%d,%d,%d,?)'%(revision_id,"timing"   ,revision.timing.time.total_seconds(),revision.timing.n_info,revision.timing.n_warnings,revision.timing.n_errors,revision.timing.n_other),('\n'.join(revision.timing.errors),))
 
                 for clock in revision.fmax_fit:
                     cursor.execute('INSERT INTO clocks (revision_id,clock,fmax_target,fmax) VALUES (%d,"%s",%f,%f)'%(revision_id,clock,revision.fmax_gen[clock],revision.fmax_fit[clock]))
@@ -138,11 +144,14 @@ class Compile:
                 result=cursor.execute('SELECT * FROM processinfo WHERE revision_id=%d'%row[0])
                 for row in result:
                     process=row[2]
-                    rev.__getattr__(process).time=datetime.timedelta(seconds=row[3])
-                    rev.__getattr__(process).n_info=row[4]
-                    rev.__getattr__(process).n_warnings=row[5]
-                    rev.__getattr__(process).n_errors=row[6]
-                    rev.__getattr__(process).n_other=row[7]
+                    rev.__getattribute__(process).exists=True
+                    rev.__getattribute__(process).failed=row[6]>0                    
+                    rev.__getattribute__(process).time=datetime.timedelta(seconds=row[3])
+                    rev.__getattribute__(process).n_info=row[4]
+                    rev.__getattribute__(process).n_warnings=row[5]
+                    rev.__getattribute__(process).n_errors=row[6]
+                    rev.__getattribute__(process).n_other=row[7]
+                    rev.__getattribute__(process).errors=row[8].split('\n')
                     
                 self.revisions.append(rev)
 
@@ -186,30 +195,6 @@ class Compile:
             if self.auxcommon_version=='N/A':
                 self.auxcommon_version=line.split()[1][:7]
 
-        # Dump some of the error messages
-        if len(self.revisions):
-
-          if self.revisions[0].analysis.n_errors>0:
-              self.extra_info += [ '<h4 class="text-left">Analysis Errors</h4>' ]
-              for errorline in self.revisions[0].analysis.errors:
-                  self.extra_info += [ errorline+'\n' ]
-          if self.revisions[0].fitter.n_errors>0:
-              self.extra_info += [ '<h4 class="text-left">Fitter Errors</h4>' ]
-              for errorline in self.revisions[0].fitter.errors:
-                  self.extra_info += [ errorline+'\n' ]
-          if self.revisions[0].assembler.n_errors>0:
-              self.extra_info += [ '<h4 class="text-left">Assembler Errors</h4>' ]
-              for errorline in self.revisions[0].assembler.errors:
-                  self.extra_info += [ errorline+'\n' ]
-          if self.revisions[0].timing.n_errors>0:
-              self.extra_info += [ '<h4 class="text-left">Timing Errors</h4>' ]
-              for errorline in self.revisions[0].timing.errors:
-                  self.extra_info += [ errorline+'\n' ]
-              
-
-        else:
-            self.extra_info += [ '<h4 class="text-left">Warning: no revisions found.</h4>' ]
-
     def build_extra_info(self):
         """ Build the extra_info (HTML) structure from properties """
 
@@ -218,11 +203,35 @@ class Compile:
         self.extra_info += [ " scp eshop1.uchicago.edu:/net/designs/FTK/Nightlies/"+self.compile_name+".tar.bz2 ." ]
         self.extra_info += [ "" ]
         
-        if len(self.revisions):        
-            # Table of resource usage
-            self.extra_info += [ htmltools.maketable('Fitter Resource Usage Summary',None,[['Logic utilization (ALMs needed / total ALMs on device)','%d / %d'%(self.revisions[0].ru_logicutil,self.revisions[0].ru_logicutil_total),'%0.0f%%'%(self.revisions[0].ru_logicutil/self.revisions[0].ru_logicutil_total*100)],
-                                                                                           ['Total DSP Blocks','%d / %d'%(self.revisions[0].ru_dspblocks,self.revisions[0].ru_dspblocks_total),'%0.0f%%'%(self.revisions[0].ru_dspblocks/self.revisions[0].ru_dspblocks_total*100)],
-                                                                                           ['Horizontal periphery clocks and Vertical periphery clocks','%d / %d'%(self.revisions[0].ru_perphclocks,self.revisions[0].ru_perphclocks_total),'%0.0f%%'%(self.revisions[0].ru_perphclocks/self.revisions[0].ru_perphclocks_total*100)]]) ]
+        if len(self.revisions):
+            if not self.revisions[0].fitter.failed:
+                # Table of resource usage
+                self.extra_info += [ htmltools.maketable('Fitter Resource Usage Summary',None,[['Logic utilization (ALMs needed / total ALMs on device)','%d / %d'%(self.revisions[0].ru_logicutil,self.revisions[0].ru_logicutil_total),'%0.0f%%'%(self.revisions[0].ru_logicutil/self.revisions[0].ru_logicutil_total*100)],
+                                                                                               ['Total DSP Blocks','%d / %d'%(self.revisions[0].ru_dspblocks,self.revisions[0].ru_dspblocks_total),'%0.0f%%'%(self.revisions[0].ru_dspblocks/self.revisions[0].ru_dspblocks_total*100)],
+                                                                                               ['Horizontal periphery clocks and Vertical periphery clocks','%d / %d'%(self.revisions[0].ru_perphclocks,self.revisions[0].ru_perphclocks_total),'%0.0f%%'%(self.revisions[0].ru_perphclocks/self.revisions[0].ru_perphclocks_total*100)]]) ]
+
+            # Error messages
+            if self.revisions[0].assignments.exists and self.revisions[0].assignments.failed:
+                self.extra_info += [ '<h4 class="text-left">Assignments Errors</h4>' ]
+                for errorline in self.revisions[0].assignments.errors:
+                    self.extra_info += [ errorline+'\n' ]            
+            if self.revisions[0].analysis.exists and self.revisions[0].analysis.failed:
+                self.extra_info += [ '<h4 class="text-left">Analysis Errors</h4>' ]
+                for errorline in self.revisions[0].analysis.errors:
+                    self.extra_info += [ errorline+'\n' ]
+            if self.revisions[0].fitter.exists and self.revisions[0].fitter.failed:
+                self.extra_info += [ '<h4 class="text-left">Fitter Errors</h4>' ]
+                for errorline in self.revisions[0].fitter.errors:
+                    self.extra_info += [ errorline+'\n' ]
+            if self.revisions[0].assembler.exists and self.revisions[0].assembler.failed:
+                self.extra_info += [ '<h4 class="text-left">Assembler Errors</h4>' ]
+                for errorline in self.revisions[0].assembler.errors:
+                    self.extra_info += [ errorline+'\n' ]
+            if self.revisions[0].timing.exists and self.revisions[0].timing.failed:
+                self.extra_info += [ '<h4 class="text-left">Timing Errors</h4>' ]
+                for errorline in self.revisions[0].timing.errors:
+                    self.extra_info += [ errorline+'\n' ]
+
         else:
             self.extra_info += [ '<h4 class="text-left">Warning: no revisions found.</h4>' ]
 

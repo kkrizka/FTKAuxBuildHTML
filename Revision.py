@@ -9,10 +9,13 @@ from Table import *
 
 class ProcessInfo:
     def __init__(self):
-        self.n_info = -1
-        self.n_warnings = -1 
-        self.n_errors = -1
-        self.n_other = -1
+        self.failed=True
+        self.exists=False
+
+        self.n_info = 0
+        self.n_warnings = 0
+        self.n_errors = 0
+        self.n_other = 0
 
         self.errors = []
 
@@ -38,7 +41,10 @@ class ProcessInfo:
             match=re_elapsed.search(line)
             if match!=None:
                 self.time=datetime.timedelta(hours=int(match.group(1)),minutes=int(match.group(2)),seconds=int(match.group(3)))
-        
+
+        # information stored
+        self.exists=True
+        self.failed=not self.exists or self.n_errors>0
 
 class Revision:
 
@@ -50,11 +56,12 @@ class Revision:
 
         parts0=revpath.split('/')        
         self.rev_name  = parts0[1]
-        
-        self.analysis = ProcessInfo()
-        self.fitter = ProcessInfo()
-        self.assembler = ProcessInfo()
-        self.timing = ProcessInfo()
+
+        self.assignments = ProcessInfo()        
+        self.analysis    = ProcessInfo()
+        self.fitter      = ProcessInfo()
+        self.assembler   = ProcessInfo()
+        self.timing      = ProcessInfo()
         self.compile_time = None
 
         self.version = "N/A"
@@ -64,8 +71,8 @@ class Revision:
         self.n_errors = -1
         self.n_other = -1
 
-        self.fmax_fit = { 'outclk_wire[0]' : '-' , 'outclk_wire[1]' : '-' , 'outclk_wire[2]' : '-' }
-        self.fmax_gen = { 'outclk_wire[0]' : '-' , 'outclk_wire[1]' : '-' , 'outclk_wire[2]' : '-' }
+        self.fmax_fit = { }
+        self.fmax_gen = { }
 
         #self.resourceusage=None
         self.ru_logicutil=0
@@ -99,13 +106,13 @@ class Revision:
             return '<td class="text-success">'+str(self.n_errors)+'</td>'
 
     def numeric_fMax( self , k ):
-        if self.fmax_gen[k] == '-' or self.fmax_fit[k] == '-':
+        if k not in self.fmax_gen or k not in self.fmax_fit:
             return [ 0. , 0. ]
         else:
             return [ self.fmax_fit[k], self.fmax_gen[k] ]
 
     def markup_fMax( self , k ):
-        if self.fmax_gen[k] == '-' or self.fmax_fit[k] == '-':
+        if k not in self.fmax_gen or k not in self.fmax_fit:
             return '<td>-</td>'
         cl = 'text-success'
         if self.fmax_gen[k] > self.fmax_fit[k]:
@@ -126,19 +133,20 @@ class Revision:
 
         # Time information
         try:
-            self.analysis.process(fh.extractfile(self.revpath+'/AnalysisLog.txt'))
-            self.fitter.process(fh.extractfile(self.revpath+'/FitterLog.txt'))
-            self.assembler.process(fh.extractfile(self.revpath+'/AssemblerLog.txt'))            
-            self.timing.process(fh.extractfile(self.revpath+'/TimingLog.txt'))
-        except KeyError:
+            self.assignments.process(fh.extractfile(self.revpath+'/AssignmentsLog.txt'))
+            self.analysis   .process(fh.extractfile(self.revpath+'/AnalysisLog.txt'))
+            self.fitter     .process(fh.extractfile(self.revpath+'/FitterLog.txt'))
+            self.assembler  .process(fh.extractfile(self.revpath+'/AssemblerLog.txt'))            
+            self.timing     .process(fh.extractfile(self.revpath+'/TimingLog.txt'))
+        except KeyError as e:
             pass
 
-        self.compile_time=self.analysis.time+self.fitter.time+self.assembler.time+self.timing.time
+        self.compile_time=self.assignments.time+self.analysis.time+self.fitter.time+self.assembler.time+self.timing.time
 
-        self.n_info=self.analysis.n_info+self.fitter.n_info+self.assembler.n_info+self.timing.n_info
-        self.n_warnings=self.analysis.n_warnings+self.fitter.n_warnings+self.assembler.n_warnings+self.timing.n_warnings
-        self.n_errors=self.analysis.n_errors+self.fitter.n_errors+self.assembler.n_errors+self.timing.n_errors
-        self.n_other=self.analysis.n_other+self.fitter.n_other+self.assembler.n_other+self.timing.n_other
+        self.n_info    =self.assignments.n_info    +self.analysis.n_info    +self.fitter.n_info    +self.assembler.n_info    +self.timing.n_info
+        self.n_warnings=self.assignments.n_warnings+self.analysis.n_warnings+self.fitter.n_warnings+self.assembler.n_warnings+self.timing.n_warnings
+        self.n_errors  =self.assignments.n_errors  +self.analysis.n_errors  +self.fitter.n_errors  +self.assembler.n_errors  +self.timing.n_errors
+        self.n_other   =self.assignments.n_other   +self.analysis.n_other   +self.fitter.n_other   +self.assembler.n_other   +self.timing.n_other
 
         # Version information
         try:
