@@ -1,0 +1,400 @@
+/*
+ * Author: Carlos Alvarez
+ * URL: http://alvarez.is
+ *
+ * Project Name: Bolt - Free Bootstrap 3 Theme
+ * Version: 1.0
+ * URL: http://blacktie.co
+ */
+
+/* FONTS */
+@import url(http://fonts.googleapis.com/css?family=Lato:300,400,700,900);
+@import url(http://fonts.googleapis.com/css?family=Raleway:400,300,700,900);
+
+/* OVERALL ASPECT */
+
+body {
+    background-color: #f2f2f2;
+    font-family: "Lato";
+    font-weight: 300;
+    font-size: 16px;
+    color: #555;
+
+    -webkit-font-smoothing: antialiased;
+    -webkit-overflow-scrolling: touch;
+
+    margin-top: 70px;
+}
+
+/* Titles */
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Raleway";
+    font-weight: 300;
+    color: #333;
+}
+
+
+/* Paragraph & Typographic */
+p {
+    line-height: 28px;
+    margin-bottom: 25px;
+}
+
+.centered {
+    text-align: center;
+}
+
+.right {
+    text-align: right;
+}
+
+.left {
+    text-align: left;
+}
+
+.mt {
+    margin-top: 40px;
+}
+
+/* Links */
+a {
+    color: #f85c37;
+    word-wrap: break-word;
+
+    -webkit-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -moz-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -ms-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -o-transition: color 0.1s ease-in, background 0.1s ease-in;
+    transition: color 0.1s ease-in, background 0.1s ease-in;
+}
+
+a:hover,
+a:focus {
+    color: #7b7b7b;
+    text-decoration: none;
+    outline: 0;
+}
+
+a:before,
+a:after {
+    -webkit-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -moz-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -ms-transition: color 0.1s ease-in, background 0.1s ease-in;
+    -o-transition: color 0.1s ease-in, background 0.1s ease-in;
+    transition: color 0.1s ease-in, background 0.1s ease-in;
+}
+
+/* Bootstrap Modifications */
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 1em 0;
+    padding: 0;
+}
+
+
+.navbar {
+    font-weight: 800;
+    font-size: 14px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    /*background-color: #ffffff;*/
+    /*background-image: url(assets/img/cloudchamber1.png);*/
+    /*background-image: url(/Users/jordan/Desktop/public_html/bolt/assets/img/cloudchamber1_slice.png);*/
+    background-image: url(http://hep.uchicago.edu/~jswebster/assets/img/cloudchamber1_slice.png);
+    background-repeat: repeat-x;
+}
+
+/*.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {*/
+.navbar-default .navbar-nav > .active > a {
+    filter:alpha(opacity=90);
+    opacity:.9;
+    color: #ffffff;
+    font-size: 18px;
+    background-color: #74cfae;
+}
+
+.navbar-default .navbar-nav > .active > a:hover {
+    filter:alpha(opacity=100);
+    opacity:1;
+    color: #ffffff;
+    background-color: #74cfae;
+}
+
+.navbar-default .navbar-nav > .active > a:focus {
+    color: #000000;
+    background-color: #74cfae;
+}
+
+.navbar-default .navbar-nav > .activesmall > a {
+    filter:alpha(opacity=90);
+    opacity:.9;
+    color: #ffffff;
+    font-size: 18px;
+    /*border-style: solid;*/
+    /*border-width: 1px;*/
+    /*border-color: #ffffff;*/
+    padding-top: 2px;
+    padding-bottom: 3px;
+    background-color: #74aecf;
+}
+
+.navbar-default .navbar-nav > .activesmall > a:hover {
+    filter:alpha(opacity=100);
+    opacity:1;
+    color: #ffffff;
+    background-color: #74bedf;    
+}
+
+.navbar-default .navbar-nav > .activesmall > a:focus {
+    color: #000000;
+    background-color: #74aecf;    
+}
+
+
+.navbar-brand {
+    font-size: 60px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.btn-theme {
+    color: #ffffff;
+    background-color: #74cfae;
+    border-color: transparent;
+}
+
+.btn {
+    padding: 10px 30px;
+    margin-bottom: 0;
+    font-size: 18px;
+    border: 5px solid transparent;
+    border-radius: 0px;
+}
+
+.lead {
+    letter-spacing: 1px;
+}
+
+/* WRAP SECTIONS */
+
+/* hello */
+#hello {
+    width: 100%;
+    padding-top: 100px;
+    padding-bottom: 100px;
+}
+
+#hello h1 {
+    font-size: 90px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #74cfae;
+}
+
+#hello h2 {
+    font-size: 25px;
+    color: #c0c0c0;
+    font-weight: 400;
+}
+
+#hello p {
+    font-family: "Raleway";
+    font-size: 20px;
+    font-weight: 400;
+    color: #c0c0c0;
+}
+
+#hello bold {
+    /*font-size: 25px;*/
+    font-weight: 700;
+    color: #74cfae;
+}
+
+/* Green */
+#green {
+    background-color: #74cfae;
+    padding-top: 100px;
+    padding-bottom: 150px;
+    margin-bottom: 0px;
+}
+
+#green div.stripe {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: #52ad8c;
+}
+
+#green a.btn {
+    color: #dddddd;
+    background-color: #444444;
+    /*border-color: #111111;*/
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+#green a.btn-1:hover { background-color: #446666; }
+#green a.btn-2:hover { background-color: #664466; }
+#green a.btn-3:hover { background-color: #666644; }
+#green a.btn-4:hover { background-color: #444466; }
+
+#green h3 {
+    color: white;
+    font-weight: 400;
+    margin-bottom: 35px;
+}
+
+#green p {
+    color: white;
+    font-weight: 400;
+    font-size: 20px;
+}
+
+#white {
+    background-color: #f2f2f2;
+    padding-top: 100px;
+    padding-bottom: 150px;
+    margin-bottom: 0px;
+}
+
+/* Skills */
+#skills {
+    background-color: #4e4e4e;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    margin-top: 50px;
+}
+
+#skills h3 {
+    color: white;
+}
+
+#skills p {
+    color: white;
+    font-weight: 400;
+}
+
+/* Social Links */
+#social {
+    width: 100%;
+    padding-top: 200px;
+    padding-bottom: 200px;
+}
+
+#social i {
+    font-size: 50px;
+    color: #74cfae;
+}
+
+#social .col-md-3:hover {
+    background-color: #f5f5f5;
+}
+
+#social .col-md-3 {
+    padding:30px;
+}
+
+/* Footer */
+#f {
+    padding-top: 20px;
+    background-color: #74cfae;
+}
+
+#f p {
+    color: white;
+    text-align: right;
+    font-weight: 400;
+}
+
+/* Image Opacity */
+.grid img {
+    opacity: .7;
+}
+.grid img:hover {
+    opacity: 1;
+}
+
+
+/* customizing the contact tooltip style */
+.tooltip.bottom .tooltip-inner {
+    background-color: #ffffff;
+    font-size: 15px;
+    color: #000000;
+    opacity: 1;
+}
+.tooltip.bottom .tooltip-arrow {
+    border-bottom-color: #ffffff;
+    opacity: 1;
+}  
+
+
+/* 
+ * for collapsible table 
+ */
+
+table a {
+    background-color: transparent;
+    color: #748eff;
+}
+
+.hiddenRow {
+    padding: 0 !important;
+    background-color: #f5f5f5;
+    border: 1px dashed #dddddd;
+}
+
+.table-redheader {
+    background-color: #772222;
+}
+
+.table-redheader > thead > tr > th {
+    color: #ff8888;
+    font-size: 1em
+}
+
+
+/* tooltip experiment for long node names */
+/* use with: <span id="links"><a href="#">short name<span>longer node name</span></a></span> */
+span#tip {
+    position: relative;
+    top: 0;
+    left: 0;
+}
+span#tip a {
+    text-decoration: none;
+    color: #555; /*#748eff;*/
+}
+span#tip a:hover {}
+
+span#tip a span {
+    display: none;
+}
+span#tip a:hover span {
+    display: flex;
+    /*font-size: 15px;*/
+    position: absolute;
+    top: -2px;
+    left: -2px; 
+    padding: 1px;
+    margin: 0px;
+    z-index: 100;
+    border: 1px solid #74cfae;
+    color: #333;
+    background: #ffffff;
+    text-align: left;
+}
+
+
+/* 
+ * Centering the timing graphs on the nightlies page
+ */
+
+.img-timing > img {
+    border: 5px;
+    display: block;
+    margin: 0 auto;
+}
