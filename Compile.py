@@ -205,9 +205,12 @@ class Compile:
         if len(self.revisions):
             if not self.revisions[0].fitter.failed:
                 # Table of resource usage
-                self.extra_info += [ htmltools.maketable('Fitter Resource Usage Summary',None,[['Logic utilization (ALMs needed / total ALMs on device)','%d / %d'%(self.revisions[0].ru_logicutil,self.revisions[0].ru_logicutil_total),'%0.0f%%'%(self.revisions[0].ru_logicutil/self.revisions[0].ru_logicutil_total*100)],
-                                                                                               ['Total DSP Blocks','%d / %d'%(self.revisions[0].ru_dspblocks,self.revisions[0].ru_dspblocks_total),'%0.0f%%'%(self.revisions[0].ru_dspblocks/self.revisions[0].ru_dspblocks_total*100)],
-                                                                                               ['Horizontal periphery clocks and Vertical periphery clocks','%d / %d'%(self.revisions[0].ru_perphclocks,self.revisions[0].ru_perphclocks_total),'%0.0f%%'%(self.revisions[0].ru_perphclocks/self.revisions[0].ru_perphclocks_total*100)]]) ]
+                ru_logicutil_frac  ='%0.0f%%'%(self.revisions[0].ru_logicutil  /self.revisions[0].ru_logicutil_total  *100) if self.revisions[0].ru_logicutil_total>0   else '-'
+                ru_dspblocks_frac  ='%0.0f%%'%(self.revisions[0].ru_dspblocks  /self.revisions[0].ru_dspblocks_total  *100) if self.revisions[0].ru_dspblocks_total>0   else '-'
+                ru_perphclocks_frac='%0.0f%%'%(self.revisions[0].ru_perphclocks/self.revisions[0].ru_perphclocks_total*100) if self.revisions[0].ru_perphclocks_total>0 else '-'
+                self.extra_info += [ htmltools.maketable('Fitter Resource Usage Summary',None,[['Logic utilization (ALMs needed / total ALMs on device)','%d / %d'%(self.revisions[0].ru_logicutil,self.revisions[0].ru_logicutil_total),'%s'%(ru_logicutil_frac)],
+                                                                                               ['Total DSP Blocks','%d / %d'%(self.revisions[0].ru_dspblocks,self.revisions[0].ru_dspblocks_total),'%s'%(ru_dspblocks_frac)],
+                                                                                               ['Horizontal periphery clocks and Vertical periphery clocks','%d / %d'%(self.revisions[0].ru_perphclocks,self.revisions[0].ru_perphclocks_total),'%s'%(ru_perphclocks_frac)]]) ]
 
             # Error messages
             if self.revisions[0].assignments.exists and self.revisions[0].assignments.failed:
