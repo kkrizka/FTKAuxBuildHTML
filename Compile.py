@@ -69,7 +69,6 @@ class Compile:
         # Check if project exists
         cursor.execute('SELECT * FROM projects WHERE name="%s"'%self.project_name)
         result=cursor.fetchone()
-        print(result)
         project_id=None
         if result==None: # Create
             cursor.execute('INSERT INTO projects (name) VALUES ("%s")'%self.project_name)
@@ -81,11 +80,9 @@ class Compile:
         # Check if compile exists
         cursor.execute('SELECT * FROM compiles WHERE project_id=%d'%project_id)
         result=cursor.fetchone()
-        print(result)
         compile_id=None
         if result==None:
             self.process_file()
-            print(self.extra_info)
 
             cursor.execute('INSERT INTO compiles (project_id,datetime,firmware_version,auxcommon_version,firmware_log,auxcommon_log) VALUES (%d,%d,"%s","%s",?,?)'%(project_id,time.mktime(self.date.timetuple()),self.firmware_version,self.auxcommon_version),('\n'.join(self.firmware_log),'\n'.join(self.auxcommon_log)))
             db.commit()
@@ -122,7 +119,6 @@ class Compile:
 
             result=cursor.execute('SELECT * FROM revisions WHERE compile_id=%d'%compile_id)
             for row in result:
-                print('revision',row)
                 rev=Revision(row[2])
                 rev.compile_time=datetime.timedelta(seconds=row[3])
                 rev.version=row[4]
@@ -146,15 +142,15 @@ class Compile:
                 result=cursor.execute('SELECT * FROM processinfo WHERE revision_id=%d'%row[0])
                 for row in result:
                     process=row[2]
-                    rev.__getattribute__(process).exists=True
-                    rev.__getattribute__(process).failed=row[6]>0                    
-                    rev.__getattribute__(process).time=datetime.timedelta(seconds=row[3])
-                    rev.__getattribute__(process).n_info=row[4]
-                    rev.__getattribute__(process).n_warnings=row[5]
-                    rev.__getattribute__(process).n_errors=row[6]
-                    rev.__getattribute__(process).n_other=row[7]
-                    rev.__getattribute__(process).errors=row[8].split('\n')
-                    
+                    getattr(rev,process).exists=True
+                    getattr(rev,process).failed=row[6]>0                    
+                    getattr(rev,process).time=datetime.timedelta(seconds=row[3])
+                    getattr(rev,process).n_info=row[4]
+                    getattr(rev,process).n_warnings=row[5]
+                    getattr(rev,process).n_errors=row[6]
+                    getattr(rev,process).n_other=row[7]
+                    getattr(rev,process).errors=row[8].split('\n')
+
                 self.revisions.append(rev)
 
         self.build_extra_info()

@@ -74,7 +74,9 @@ cursor.execute('CREATE TABLE IF NOT EXISTS processinfo (id          INTEGER PRIM
                                                         FOREIGN KEY(revision_id) REFERENCES revisoins(id) ON DELETE CASCADE )')
 db.commit()
 
-for c in compiles: c.process(db)
+for c in compiles:
+    print('processing:',c.compile_name,'...')
+    c.process(db)
 
 #
 # Split up the compiles based on project name and sort by date
@@ -158,7 +160,7 @@ for p in projects:
     
     for c in compile_dict[p]:
 
-        print("processing:",c.compile_name,"...")
+        print("writing:",c.compile_name,"...")
 
         if not len(c.revisions):
 
