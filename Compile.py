@@ -78,7 +78,7 @@ class Compile:
             project_id=result[0]
 
         # Check if compile exists
-        cursor.execute('SELECT * FROM compiles WHERE project_id=%d'%project_id)
+        cursor.execute('SELECT * FROM compiles WHERE project_id=%d AND datetime=%d'%(project_id,time.mktime(self.date.timetuple())))
         result=cursor.fetchone()
         compile_id=None
         if result==None:
