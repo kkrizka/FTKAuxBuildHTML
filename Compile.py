@@ -82,6 +82,7 @@ class Compile:
         result=cursor.fetchone()
         compile_id=None
         if result==None:
+            print('Load from file.')
             self.process_file()
 
             cursor.execute('INSERT INTO compiles (project_id,datetime,firmware_version,auxcommon_version,firmware_log,auxcommon_log) VALUES (%d,%d,"%s","%s",?,?)'%(project_id,time.mktime(self.date.timetuple()),self.firmware_version,self.auxcommon_version),('\n'.join(self.firmware_log),'\n'.join(self.auxcommon_log)))
